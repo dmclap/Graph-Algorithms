@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 public class GraphAlgTests extends TestCase {
 
 	Graph g, g2, g3, g4, g5, g6, g7;
+	Heap h;
 	
 	protected void setUp() {
 		g = new Graph(6);
@@ -85,27 +86,38 @@ public class GraphAlgTests extends TestCase {
 		g7.addDirectedEdge(1,2,15);
 		g7.addDirectedEdge(1,3,5);
 		g7.addDirectedEdge(2,3,10);
+		h = new ExpandableHeap(13);
+		h.add(0,10);
+		h.add(1,5);
+		h.add(2,13);
+		h.add(3,7);
+		h.add(4,25);
+		h.add(5,15);
+		h.add(6,20);
+		h.add(7,45);
+		h.add(8,30);
+		h.add(9,2);
 	}
 	
-	public void test_dijkstra() {
-		int[] dists = GraphAlgs.dijkstra(g, 0);
+	public void test_slowDijkstra() {
+		int[] dists = GraphAlgs.slowDijkstra(g, 0);
 		int[] expected = {0,7,9,20,20,11};
 		assertEquals(dists.length, expected.length);
 		for(int i = 0; i < dists.length; ++i)
 			assertEquals(dists[i], expected[i]);
 		// tests for g2
-		assertEquals(GraphAlgs.dijkstraSP(g,1,4), 21);
-		dists = GraphAlgs.dijkstra(g2,7);
+		assertEquals(GraphAlgs.slowDijkstraSP(g,1,4), 21);
+		dists = GraphAlgs.slowDijkstra(g2,7);
 		int[]expected2 = {2,4,4,8,7,14,13,0};
 		assertEquals(dists.length, expected2.length);
 		for(int i = 0; i < dists.length; ++i)
 			assertEquals(dists[i], expected2[i]);
-		dists = GraphAlgs.dijkstra(g6,0);
+		dists = GraphAlgs.slowDijkstra(g6,0);
 		int[] expected3 = {0,3,3,6,5,8};
 		assertEquals(dists.length, expected3.length);
 		for(int i = 0; i < dists.length; ++i)
 			assertEquals(dists[i], expected3[i]);
-		dists = GraphAlgs.dijkstra(g7,0);
+		dists = GraphAlgs.slowDijkstra(g7,0);
 		int[] expected4 = {0,10,5,15};
 		assertEquals(dists.length, expected4.length);
 		for(int i = 0; i < dists.length; ++i)
@@ -222,5 +234,85 @@ public class GraphAlgTests extends TestCase {
 				assertEquals(expected[i][j], res[i][j]);
 		}
 	}
+	
+	public void test_heapBasic() {
+		int curr = 0;
+		int val = h.dequeue();
+		assertEquals(val,9);
+		val = h.dequeue();
+		assertEquals(val,1);
+		int[] expected = {3,0,2,5,10,6,4,11,8,7};
+		h.add(10,17);
+		h.add(11,27);
+		while(!h.isEmpty()) {
+			int top = h.dequeue();
+			assertEquals(top, expected[curr]);
+			++curr;
+		}
+	}
+	
+	public void test_heapUpdateKey() {
+		h.updateKey(9, 110);
+		h.updateKey(8, 0);
+		h.updateKey(2, 1);
+		int[] expected = {8,2,1,3,0,5,6,4,7,9};
+		int curr = 0;
+		while(!h.isEmpty()) {
+			int top = h.dequeue();
+			assertEquals(top, expected[curr]);
+			++curr;
+		}
+	}
 
+	public void test_fasterDijkstra() {
+		int[] dists = GraphAlgs.dijkstra(g, 0);
+		int[] expected = {0,7,9,20,20,11};
+		assertEquals(dists.length, expected.length);
+		for(int i = 0; i < dists.length; ++i) {
+			assertEquals(dists[i], expected[i]);
+		}
+		// tests for g2
+		assertEquals(GraphAlgs.dijkstraSP(g,1,4), 21);
+		dists = GraphAlgs.dijkstra(g2,7);
+		int[] expected2 = {2,4,4,8,7,14,13,0};
+		assertEquals(dists.length, expected2.length);
+		for(int i = 0; i < dists.length; ++i)
+			assertEquals(dists[i], expected2[i]);
+		dists = GraphAlgs.dijkstra(g6,0);
+		int[] expected3 = {0,3,3,6,5,8};
+		assertEquals(dists.length, expected3.length);
+		for(int i = 0; i < dists.length; ++i)
+			assertEquals(dists[i], expected3[i]);
+		dists = GraphAlgs.dijkstra(g7,0);
+		int[] expected4 = {0,10,5,15};
+		assertEquals(dists.length, expected4.length);
+		for(int i = 0; i < dists.length; ++i)
+			assertEquals(dists[i], expected4[i]);
+	}
+	
+	public void test_bellmanFord() {
+		int[] dists = GraphAlgs.bellmanFord(g, 0);
+		int[] expected = {0,7,9,20,20,11};
+		assertEquals(dists.length, expected.length);
+		for(int i = 0; i < dists.length; ++i) {
+			assertEquals(dists[i], expected[i]);
+		}
+		// tests for g2
+		assertEquals(GraphAlgs.bellmanFordSP(g,1,4), 21);
+		dists = GraphAlgs.bellmanFord(g2,7);
+		int[] expected2 = {2,4,4,8,7,14,13,0};
+		assertEquals(dists.length, expected2.length);
+		for(int i = 0; i < dists.length; ++i)
+			assertEquals(dists[i], expected2[i]);
+		dists = GraphAlgs.bellmanFord(g6,0);
+		int[] expected3 = {0,3,3,6,5,8};
+		assertEquals(dists.length, expected3.length);
+		for(int i = 0; i < dists.length; ++i)
+			assertEquals(dists[i], expected3[i]);
+		dists = GraphAlgs.bellmanFord(g7,0);
+		int[] expected4 = {0,10,5,15};
+		assertEquals(dists.length, expected4.length);
+		for(int i = 0; i < dists.length; ++i)
+			assertEquals(dists[i], expected4[i]);
+	}
 }

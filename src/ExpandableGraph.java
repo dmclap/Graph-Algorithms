@@ -6,7 +6,8 @@ import java.util.Map;
  * A version of the Graph class that doesn't need to know how many vertices there
  * are in the graph when it begins.  It keeps track of the adjacency list as a
  * resizable data structure to allow the graph to expand to the number of
- * distinct vertices that are input.
+ * distinct vertices that are input.  Specifically, if there is an edge u->v
+ * with weight w, then adjList.get(u).get(v) will return w.
 */
 public class ExpandableGraph extends Graph {
 	private ArrayList<Map<Integer, Integer>> adjList;
@@ -15,7 +16,7 @@ public class ExpandableGraph extends Graph {
 		adjList = new ArrayList<Map<Integer,Integer>>(n);
 		numVerts = n;
 		for(int i = 0; i < n; ++i)
-			adjList.add(new HashMap<Integer,Integer>());
+			adjList.add(new HashMap<Integer,Integer>(n/4)); // a guess at the connectedness
 	}
 	
 	public ExpandableGraph() {
