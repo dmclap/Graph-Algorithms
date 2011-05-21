@@ -1,0 +1,8 @@
+This the actual source for the project, and probably the only thing that
+should have been added.  The algorithm implementations are in GraphAlgs,
+the tests are in GraphAlgsTests, and the rest are data structures that were
+built for representing and solving these problems.  There are really only two 
+data structures, Graphs and Heaps, but in each case, we have one where the size
+must be known in advance, and one where it can be any size.  Then, there's
+also a class/interface above that to dictate what methods need to be 
+implemented.
