@@ -2,19 +2,25 @@
 public interface Heap {
 	/*
 	 * Get the item with the highest priority and remove it from
-	 * the Heap
+	 * the Heap.
 	 */
 	public int dequeue();
 	
 	/*
 	 * Add a new key to the heap with the given value, updating the
 	 * structure if necessary.
+	 * 
+	 * key: The key of the item to be added.
+	 * value: The value of the item to be added.
 	 */
 	public void add(int key, int value);
 	
 	/*
 	 * Updates the value associated with this particular key, once
 	 * again updating the structure if necessary.
+	 * 
+	 * key: The key of the item whose value we want to update.
+	 * value: The new value of this item.
 	 */
 	public void updateKey(int key, int newValue);
 	
@@ -29,9 +35,9 @@ public interface Heap {
 	public boolean hasKey(int key);
 	
 	/*
-	 * Returns the value at the top of the heap without removing it.
-	 * 
-	 * TODO: necessary?
+	 * Returns the value at the top of the heap without removing it.  This
+	 * is used for Dijkstra's algorithm, where we need both the key and
+	 * value.
 	 */
 	public int peekTopValue();
 	

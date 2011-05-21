@@ -4,8 +4,8 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.Collections;
 
-// TODO: TSP?  Graph coloring (using maximal independent sets)?
 // TODO: Abstract away the process of getting the list of edges
+// TODO: add more tests
 public class GraphAlgs {
 	/*
 	 * Uses Dijkstra's algorithm to find the shortest paths from a particular
@@ -19,6 +19,8 @@ public class GraphAlgs {
 	 * dists: A flag determining whether to return the distances or the path reconstruction.
 	 */
 	public static int[] dijkstra(Graph g, int source, boolean dists) {
+		if(g.hasNegativeEdges())
+			throw new IllegalArgumentException("Dijkstra's algorithm doesn't work with negative edge weights!");
 		int numVerts = g.numVertices();
 		int[] dist = new int[numVerts];
 		int[] prev = new int[numVerts];
@@ -32,7 +34,7 @@ public class GraphAlgs {
 				prev[i] = source;
 			}
 			else
-				dist[i] = Integer.MAX_VALUE;
+				dist[i] = Integer.MAX_VALUE/2;
 		}
 		Heap h = new FixedHeap(numVerts);
 		h.add(source, 0);
@@ -95,6 +97,8 @@ public class GraphAlgs {
 	 * dists: A flag determining whether to return the distances or the path reconstruction.
 	 */
 	public static int[] slowDijkstra(Graph g, int source, boolean dists) {
+		if(g.hasNegativeEdges())
+			throw new IllegalArgumentException("Dijkstra's algorithm doesn't work with negative edge weights!");
 		int numVerts = g.numVertices();
 		int[] dist = new int[numVerts];
 		int[] prev = new int[numVerts];
@@ -249,43 +253,16 @@ public class GraphAlgs {
 	
 	/*
 	 * Returns a new graph that represents the minimum spanning tree of the input
-	 * graph.  Does so using Kruskal's algorithm.
+	 * graph.  Does so using Kruskal's algorithm.  Assumes that the input graph
+	 * is undirected, since this problem becomes much...stranger on a directed
+	 * graph.
 	 * 
 	 * g: See above.
 	 */
 	public static Graph minSpanningTree(Graph g) {
-		Graph mst = new Graph(g.numVertices());
-		// A private class that makes it easier to sort the edges.
-		class Edge implements Comparable<Edge> {
-			int u;
-			int v;
-			int weight = 1;
-			public Edge(int u, int v, int weight) {
-				this.u = u;
-				this.v = v;
-				this.weight = weight;
-			}
-			public int compareTo(Edge other) {
-				return this.weight - other.weight;
-			}
-			public boolean equals(Object o) {
-				Edge other = (Edge)o;
-				return ((this.u == other.u && this.v == other.v) || 
-						(this.u == other.v && this.v == other.u));
-			}
-		}
-		ArrayList<Edge> allEdges = new ArrayList<Edge>();
-		// Use the adjacency list, since it will involve less wasted work
-		Map<Integer, Integer>[] edges = g.getAdjList();
-		for(int u = 0; u < g.numVertices(); ++u) {
-			for(int v : edges[u].keySet()) {
-				int weight = edges[u].get(v);
-				Edge e = new Edge(u,v,weight);
-				// only add this edge if it's not there yet
-				if(!allEdges.contains(e))
-					allEdges.add(e);
-			}
-		}
+		Graph mst = new FixedGraph(g.numVertices());
+		// Get a list of all of the edges, to ease computation
+		ArrayList<Edge> allEdges = g.getEdgeList();
 		// Now, add edges in increasing order of weight, but only if they don't
 		// form a cycle in the graph being constructed.
 		Collections.sort(allEdges);
@@ -295,7 +272,7 @@ public class GraphAlgs {
 			int u = e.u;
 			int v = e.v;
 			int weight = e.weight;
-			if(path(g,u,v)) { // only add this edge if you can't reach u from v
+			if(!path(mst,u,v)) { // only add this edge if you can't reach u from v
 				mst.addEdge(u, v, weight);
 				++count;
 			}
@@ -317,7 +294,9 @@ public class GraphAlgs {
 	 * debug: Whether or not to print intermediate values.
 	 */
 	public static int maxFlow(Graph g, int source, int sink, boolean debug) {
-		Graph resid = new Graph (g); // the residual graph for the algorithm
+		if(g.hasNegativeEdges())
+			throw new IllegalArgumentException("Negative flow constraints don't make sense!");
+		Graph resid = new FixedGraph (g); // the residual graph for the algorithm
 		int flow = 0;
 		while(true) {
 			// Find a path on the residual graph
@@ -369,18 +348,20 @@ public class GraphAlgs {
 	public static int[][] allPairsSP(Graph g) {
 		int n = g.numVertices();
 		// initializing the array
-		int[][] path = new int[n][n];
+		float[][] path = new float[n][n];
 		for(int i = 0; i < n; ++i) {
 			for(int j = 0; j < n; ++j) {
-				if(g.edgeWeight(i, j) > 0)
+				if(g.edgeWeight(i, j) != 0)
 					path[i][j] = g.edgeWeight(i, j);
 				else if(i != j)
-					path[i][j] = Integer.MAX_VALUE/2;
+					path[i][j] = Float.POSITIVE_INFINITY;
 				else
 					path[i][j] = 0;
 			}
 		}
 		// running the algorithm
+		// TODO: one negative edge weight graphs, our inability to actually use infinity
+		//	causes issues; we'll get slightly lower, but shouldn't
 		for(int k = 0; k < n; ++k) {
 			for(int j = 0; j < n; ++j) {
 				for(int i = 0; i < n; ++i) {
@@ -388,7 +369,15 @@ public class GraphAlgs {
 				}
 			}
 		}
-		return path;
+		int[][] ret = new int[n][n];
+		for(int i = 0; i < n; ++i)
+			for(int j = 0; j < n; ++j) {
+				ret[i][j] = (int)path[i][j];
+				// This is just to make our tests run better
+				if(ret[i][j] == Integer.MAX_VALUE)
+					ret[i][j] = Integer.MAX_VALUE/2;
+			}
+		return ret;
 	}
 	
 	/*
@@ -425,7 +414,7 @@ public class GraphAlgs {
 	 */
 	public static int[] bellmanFord(Graph g, int source, boolean dist, boolean check) {
 		int n = g.numVertices();
-		int[] dists = new int[n];
+		float[] dists = new float[n];
 		int[] prev=  new int[n];
 		// Initialize the arrays
 		for(int i = 0; i < n; ++i) {
@@ -433,37 +422,10 @@ public class GraphAlgs {
 			if(i == source)
 				dists[i] = 0;
 			else
-				dists[i] = Integer.MAX_VALUE/2;
+				dists[i] = Float.POSITIVE_INFINITY;
 		}
-		// Collect all the edges in the graph using the same process as in MST
-		class Edge implements Comparable<Edge> {
-			int u;
-			int v;
-			int weight = 1;
-			public Edge(int u, int v, int weight) {
-				this.u = u;
-				this.v = v;
-				this.weight = weight;
-			}
-			public int compareTo(Edge other) {
-				return this.weight - other.weight;
-			}
-			public boolean equals(Object o) {
-				Edge other = (Edge)o;
-				return ((this.u == other.u && this.v == other.v) || 
-						(this.u == other.v && this.v == other.u));
-			}
-		}
-		ArrayList<Edge> allEdges = new ArrayList<Edge>();
-		// Use the adjacency list, since it will involve less wasted work
-		Map<Integer, Integer>[] edges = g.getAdjList();
-		for(int u = 0; u < g.numVertices(); ++u) {
-			for(int v : edges[u].keySet()) {
-				int weight = edges[u].get(v);
-				Edge e = new Edge(u,v,weight);
-				allEdges.add(e);
-			}
-		}
+		ArrayList<Edge> allEdges = g.getEdgeList();
+		
 		// Compute the distances
 		for(int i = 0; i < n-1; ++i) {
 			for(Edge e : allEdges) {
@@ -482,8 +444,16 @@ public class GraphAlgs {
 				}
 			}
 		}
-		if(dist)
-			return dists;
+		if(dist) {
+			int[] intDists = new int[dists.length];
+			for(int i = 0; i < dists.length; ++i) {
+				intDists[i] = (int)dists[i];
+				// To make our tests work smoothly, they all have to have the same edge case value
+				if(intDists[i] == Integer.MAX_VALUE)
+					intDists[i] /= 2;
+			}
+			return intDists;
+		}
 		else
 			return prev;
 	}
@@ -497,6 +467,26 @@ public class GraphAlgs {
 	public static int bellmanFordSP(Graph g, int source, int sink) {
 		int[] dists = bellmanFord(g,source);
 		return dists[sink];
+	}
+	
+	/*
+	 * A shorthand for using the best shortest path algorithm for the job.  In particular,
+	 * Bellman-Ford is slower, but works in the presence of negative edge weights.  This
+	 * algorithm will check for such edge weights, and use Dijkstra's if it can, Bellman-
+	 * Ford if it can't.
+	 * 
+	 * g: As always, the graph.
+	 * source: The source vertex for the shortest path.
+	 * dists: Same as in dijkstra and bellmanFord.
+	 */
+	public static int[] shortestPath(Graph g, int source, boolean dists) {
+		if(!g.hasNegativeEdges())
+			return dijkstra(g,source,dists);
+		else
+			return bellmanFord(g,source,dists);
+	}
+	public static int[] shortestPath(Graph g, int source) {
+		return shortestPath(g,source,true);
 	}
 	
 	public static void main(String[] args) {

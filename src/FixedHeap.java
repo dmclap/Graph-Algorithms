@@ -4,7 +4,7 @@
  * updating keys.  This is an improvement over Java's PriorityQueue, which does
  * not have the last operation, and an attempt to perform a similar operation would
  * take O(n) time.  It supports a key/value pair system, where the keys are stored
- * in the heap itself, but ordered by the values they map to.  This is used for
+ * in the heap itself, but are ordered by the values they map to.  This is used for
  * Dijkstra's algorithm by having keys correspond to vertices, and values
  * correspond to the distance from the source.
  */
@@ -30,9 +30,6 @@ public class FixedHeap implements Heap {
 			distances[i] = -4;
 		}
 		end = 1;
-	}
-	protected FixedHeap() {
-		// this should never really be called, except to appease the subclass
 	}
 	
 	/*
